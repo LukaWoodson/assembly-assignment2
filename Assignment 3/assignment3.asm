@@ -70,6 +70,7 @@ readArray:
     move $t3, $a1  # Save the address of the input string
     li $t4, 0
     li $t5, 0
+    j readArrayLoop;
 
 readArrayLoop:
     lb $t6, ($t3)  # Load a character from the input string
