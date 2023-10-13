@@ -44,7 +44,7 @@
 
         sw $v0, characterStats + 4 # Store the random health value in the array
 
-        ### ------------- GENERATE RANDOM MONSTER 1 STATS -------------
+        ### ------------- GENERATE RANDOM MONSTER STAT MIN AND MAX -------------
         # Set the initial values for the monsters' min/max strength and health
         li $v0, 0  # Load constant 0
         li $t0, 3  # Load 3 (to represent 1/3 of player's stats)
@@ -66,6 +66,46 @@
         divu $t3, $t3, $t1  # Calculate 110% of player's max health
         sw $t2, monsterMinHealth  # Set monster's min health
         sw $t3, monsterMaxHealth  # Set monster's max health
+
+        ### ------------- GENERATE RANDOM MONSTER STATS -------------
+        # Initialize counters
+        li $t0, 0  # Initialize a counter for the monster index (0 for the first monster)
+
+        # Loop to generate random values for all monsters
+        generate_monster_stats:
+            # Calculate the offset in the characterStats array
+            # Each character occupies 8 words in the array (4 for strength, 4 for health)
+            mul $t1, $t0, 8  
+
+            # Generating random values for the current monster's strength
+            li $v0, 42
+            la $a1, monsterMinStrength
+            la $a2, monsterMaxStrength
+            syscall
+
+            # Store the random strength value for the current monster
+            sw $v0, characterStats($t1)  
+
+            # Generating random values for the current monster's health
+            li $v0, 42
+            la $a1, monsterMinHealth
+            la $a2, monsterMaxHealth
+            syscall
+
+            # Store the random health value for the current monster
+            sw $v0, characterStats($t1)  
+
+            # Increment the counter
+            addi $t0, $t0, 1
+
+            # Check if we've generated stats for all monsters (3 in total)
+            li $t2, 3
+            beq $t0, $t2, end_generate_stats  # Exit the loop if all monsters have stats
+
+            # Otherwise, continue generating stats for the next monster
+            j generate_monster_stats
+
+        end_generate_stats:
 
 
 
