@@ -1,6 +1,7 @@
 Submit your report PDF here . The report should include three parts:
 
-Introduction: briefly describes the purpose of this assignment
-Implementation: gives detailed description on how you implemented the task, including the runtime screen shots, as well as necessary discussions
-Summary: concludes the assignment, e.g., what you’ve learned from this assignment.  Feel free to mention any problems or errors encountered in your report
+1. Introduction: briefly describes the purpose of this assignment
+2. Implementation: gives detailed description on how you implemented the task, including the runtime screen shots, as well as necessary discussions
+3. Summary: concludes the assignment, e.g., what you’ve learned from this assignment.  Feel free to mention any problems or errors encountered in your report
+
 A minimum of one paragraph for each part is needed.  The report is directly worth 20% of this grade, but it can affect the grade given for your code.  For instance, if you can demonstrate that you have given sufficient effort to identify and fix any problems, you can earn more points with your code solution even if it is unable to run.
