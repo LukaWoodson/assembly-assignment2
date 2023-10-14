@@ -32,6 +32,24 @@
         jal generate_monster_stats # Generate random stats for monsters
     	monster_continue:
     	
+        ### ------------- GAME LOOP -------------
+        game_loop:
+            # Call the display_stats subroutine to show character stats
+            jal display_stats
+
+            # Prompt for player's action (attack or heal)
+            # Call the handle_player_action subroutine to handle the player's action
+            jal handle_player_action
+
+            # Process player's action
+            # You can use a subroutine to handle player's actions
+
+            # Check if the game is over (player or all monsters defeated)
+            # You can use a subroutine to check the game state
+
+            # If the game is not over, loop back to game_loop
+            j game_loop
+
     	
     	# Exit Program
         li $v0, 10
@@ -145,8 +163,95 @@
 
         #     jr $ra # Return to main program
 
+        # ------------- DISPLAY CHARACTER STATS -------------
+        # Subroutine to display character stats
+        # display_stats:
+        #     # Display the player's stats (strength and health)
+        #     lw $t0, characterStats  # Load player's health
+        #     lw $t1, characterStats + 4  # Load player's strength
+        #     li $v0, 4  # Print string syscall
+        #     la $a0, characterNames  # Load character names
+        #     syscall
 
+        #     # Increment $a0 to point to the next character name
+        #     addi $a0, $a0, 4
 
+        #     # Increment $a1 to point to the next character's health
+        #     addi $a1, $a1, 8
+
+        #     # Display monster stats (if their health > 0)
+        #     li $t2, 1  # Initialize monster counter (starting from Monster 1)
+
+        #     monster_loop:
+        #         # Calculate the offset for the current monster
+        #         mul $t3, $t2, 8  # Each character occupies 8 words in the array
+
+        #         # Load the current monster's health and strength
+        #         lw $t4, characterStats($t3)
+        #         addi $t3, $t3, 4  # Increment the offset by 4 to access the next word
+        #         lw $t5, characterStats($t3)
+
+        #         # Check if the monster is alive (health > 0)
+        #         bgtz $t4, display_monster_stats
+
+        #         # If the monster is defeated, increment the counter
+        #         addi $t2, $t2, 1
+
+        #         # Check if we've displayed stats for all monsters (3 in total)
+        #         li $t6, 4  # We use 4 to loop one more time for the player's stats
+        #         beq $t2, $t6, end_display_stats
+
+        #         # Otherwise, continue with the next monster
+        #         j monster_loop
+
+        #     display_monster_stats:
+        #         # Display the current monster's stats (strength and health)
+        #         li $v0, 4  # Print string syscall
+        #         la $a0, characterNames($t2)  # Load the current monster's name
+        #         syscall
+
+        #         # Increment $a0 to point to the next character name
+        #         addi $a0, $a0, 4
+
+        #         # Display monster's stats (health and strength)
+        #         # You can use $t4 and $t5
+
+        #         # Increment $a1 to point to the next character's health
+        #         addi $a1, $a1, 8
+
+        #         # Increment the counter
+        #         addi $t2, $t2, 1
+
+        #         # Check if we've displayed stats for all monsters (3 in total)
+        #         li $t6, 4  # We use 4 to loop one more time for the player's stats
+        #         beq $t2, $t6, end_display_stats
+
+        #         # Continue with the next monster
+        #         j monster_loop
+            
+        # end_display_stats:
+        #     jr $ra  # Return from the subroutine
+
+        # ------------- HANDLE PLAYER ACTION -------------
+        # Subroutine to handle player actions
+        # handle_player_action:
+        #     # Prompt the player for their action (attack or heal)
+        #     li $v0, 4  # Print string syscall
+        #     la $a0, actionPrompt  # Load the action prompt message
+        #     syscall
+
+        #     # Get player input
+        #     li $v0, 8  # Read string syscall
+        #     la $a0, playerAction  # Load a buffer to store player's action
+        #     li $a1, 8  # Maximum number of characters to read
+        #     syscall
+
+        #     # Check player's action
+        #     # You can use conditional branches to determine the action
+        #     # Update character stats based on the chosen action
+
+        #     # Return from the subroutine
+        #     jr $ra
         
 
 
