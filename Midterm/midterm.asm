@@ -29,7 +29,7 @@
 
 .text
     main:
-       ### ------------- GENERATE RANDOM PLAYER STATS -------------
+        ### ------------- GENERATE RANDOM PLAYER STATS -------------
         li $v0, 42 # Load syscall 42 (generate random number)
         la $a1, playerMinStrength # Minimum value for random number (player's min strength)
         la $a2, playerMaxStrength # Maximum value for random number (player's max strength)
@@ -45,12 +45,12 @@
         sw $v0, characterStats + 4 # Store the random health value in the array
 
         ### ------------- GENERATE RANDOM MONSTER STAT MIN AND MAX -------------
+
         # Set the initial values for the monsters' min/max strength and health
         li $v0, 0  # Load constant 0
         li $t0, 3  # Load 3 (to represent 1/3 of player's stats)
         li $t1, 10  # Load 10 (to represent 110% of player's stats)
         
-        # Calculate the values for monsters based on the player's stats
         # Calculate the values for monsters' strength
         lw $t2, playerMinStrength  # Load player's min strength
         lw $t3, playerMaxStrength  # Load player's max strength
@@ -60,16 +60,16 @@
         sw $t3, monsterMaxStrength  # Set monster's max strength
 
         # Calculate the values for monsters' health
-        lw $t2, playerMinHealth  # Load player's min health
-        lw $t3, playerMaxHealth  # Load player's max health
+        lw $t2, playerMinHealth 
+        lw $t3, playerMaxHealth 
         divu $t2, $t2, $t0  # Calculate 1/3 of player's min health
         divu $t3, $t3, $t1  # Calculate 110% of player's max health
-        sw $t2, monsterMinHealth  # Set monster's min health
-        sw $t3, monsterMaxHealth  # Set monster's max health
+        sw $t2, monsterMinHealth 
+        sw $t3, monsterMaxHealth  
 
         ### ------------- GENERATE RANDOM MONSTER STATS -------------
-        # Initialize counters
-        li $t0, 0  # Initialize a counter for the monster index (0 for the first monster)
+        # Initialize a counter for the monster index (0 for the first monster)
+        li $t0, 0  
 
         # Loop to generate random values for all monsters
         generate_monster_stats:
@@ -107,12 +107,30 @@
 
         end_generate_stats:
 
+        ### ------------- GAME LOOP -------------
+        game_loop:
+        # Display character stats (player and living monsters)
+        # You can use a subroutine to display character stats
+
+        # Prompt for player's action (attack or heal)
+        # You can use a subroutine to get player's input
+
+        # Process player's action
+        # You can use a subroutine to handle player's actions
+
+        # Check if the game is over (player or all monsters defeated)
+        # You can use a subroutine to check the game state
+
+        # If the game is not over, loop back to game_loop
+        j game_loop
 
 
+        ### ------------- SUBROUTINES ------------- 
+
+        
 
 
-
-        # exit program
+        # Exit Program
         li $v0, 10
         syscall
 
