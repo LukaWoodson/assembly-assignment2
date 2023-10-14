@@ -126,8 +126,66 @@
 
 
         ### ------------- SUBROUTINES ------------- 
+        # Subroutine to display character stats
+        display_stats:
+            # Display the player's stats (strength and health)
+            lw $t0, characterStats  # Load player's health
+            lw $t1, characterStats + 4  # Load player's strength
+            li $v0, 4  # Print string syscall
+            la $a0, characterNames  # Load character names
+            syscall
+
+            # Display monster stats (if their health > 0)
+            li $t2, 1  # Initialize monster counter (starting from Monster 1)
+
+            monster_loop:
+                # Calculate the offset for the current monster
+                mul $t3, $t2, 8  # Each character occupies 8 words in the array
+
+                # Load the current monster's health and strength
+                lw $t4, characterStats($t3)
+                addi $t3, $t3, 4  # Increment the offset by 4 to access the next word
+                lw $t5, characterStats($t3)
+
+
+                # Check if the monster is alive (health > 0)
+                bgtz $t4, display_monster_stats
+
+                # If the monster is defeated, increment the counter
+                addi $t2, $t2, 1
+
+                # Check if we've displayed stats for all monsters (3 in total)
+                li $t6, 4  # We use 4 to loop one more time for the player's stats
+                beq $t2, $t6, end_display_stats
+
+                # Otherwise, continue with the next monster
+                j monster_loop
+
+            display_monster_stats:
+                # Display the current monster's stats (strength and health)
+                li $v0, 4  # Print string syscall
+                la $a0, characterNames($t2)  # Load the current monster's name
+                syscall
+
+                # Display monster's stats (health and strength)
+                # You can use $t4 and $t5
+
+                # Increment the counter
+                addi $t2, $t2, 1
+
+                # Check if we've displayed stats for all monsters (3 in total)
+                li $t6, 4  # We use 4 to loop one more time for the player's stats
+                beq $t2, $t6, end_display_stats
+
+                # Continue with the next monster
+                j monster_loop
+
+        end_display_stats:
+            jr $ra  # Return from the subroutine
 
         
+
+
 
 
         # Exit Program
