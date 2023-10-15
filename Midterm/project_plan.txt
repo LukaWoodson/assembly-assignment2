@@ -6,9 +6,7 @@
 1.2. Generate random values for player's strength and health.
 1.3. Generate random values for the 3 monsters' strength and health.
 1.4. Create the game loop structure.
-
 1.5. Implement a basic user interface to display character stats.
-
 1.6. Prompt the player for actions (attack or heal).
 
 
@@ -39,9 +37,7 @@
 
 4.1. Create a subroutine for calculating character stats.
 4.2. Create a subroutine for random number generation.
-
 4.3. Define subroutines for attack and heal actions.
-
 4.4. Implement a subroutine for the game loop.
 
 
