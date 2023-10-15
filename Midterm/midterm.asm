@@ -1,17 +1,8 @@
 .data
     # Define an array to store character stats: 8 elements (4 characters)
-    characterStats:
-        .word 0, 0  # Player's health and strength
-        .word 0, 0  # Monster 1's health and strength
-        .word 0, 0  # Monster 2's health and strength
-        .word 0, 0  # Monster 3's health and strength
-
-    # Define an array to store character names: 4 elements (4 characters)
-    characterNames:
-        .asciiz "Player"
-        .asciiz "Monster 1"
-        .asciiz "Monster 2"
-        .asciiz "Monster 3"
+    characterStats: .space 64
+    characterStatsLength: .word 8
+    slotSize: .word 8
 
     # Define a buffer to store player's action
     playerAction: .space 8  # Reserve 8 bytes for player's input
@@ -28,18 +19,20 @@
         jal generate_player_stats # Generate a random stats for the player
     	player_continue:
         # Initialize monsters' stats
-        la $t1, characterNames # Load the base address of characterNames
+       	li $t2, 2  # Player's strength and health are already filled
+        la $t3, 0($t0) # copy the player's strength stat into $t3
+        la $t4, 4($t0) # copy the player's health stat into $t4
         jal generate_monster_stats # Generate random stats for monsters
     	monster_continue:
     	
         ### ------------- GAME LOOP -------------
-        game_loop:
+        #game_loop:
             # Call the display_stats subroutine to show character stats
-            jal display_stats
+            # jal display_stats
 
             # Prompt for player's action (attack or heal)
             # Call the handle_player_action subroutine to handle the player's action
-            jal handle_player_action
+            # jal handle_player_action
 
             # Process player's action
             # You can use a subroutine to handle player's actions
@@ -48,7 +41,7 @@
             # You can use a subroutine to check the game state
 
             # If the game is not over, loop back to game_loop
-            j game_loop
+            #j game_loop
 
     	
     	# Exit Program
@@ -74,9 +67,6 @@
             j player_continue # Return to main program
 
         # ------------- GENERATE RANDOM VALUE -------------
-        # $a0: result value
-        # $a1: max value
-        # $a2: min value
         generate_random_value:
             li $v0, 42 # Load syscall 42 (generate random number)
             syscall # Execute the syscall
@@ -94,9 +84,26 @@
         # ------------- GENERATE RANDOM MONSTER STATS -------------
         generate_monster_stats:
             # Generate random stat for the current monster
-            li $a1, 11 # Load monster's max stat percentage into $a1 (110%)
-            li $a2, 3  # Load monster's min stat percentage into $a2 (30%)
+            li $a1, 110 # Load monster's max stat percentage into $a1 (110%)
+            li $a2, 33  # Load monster's min stat percentage into $a2 (30%)
 
+            la $a3, ($t3) # Load the player's strength into $a3
+            # Increment characterStats offset by 4
+            add $t0, $t0, 4
+            jal calculate_monster_stats  # Generate random strength stat for the current monster
+
+            la $a3, ($t4) # Load the player's health into $a3
+            # Increment characterStats offset by 4
+            add $t0, $t0, 4
+            jal calculate_monster_stats  # Generate random stat for the current monster
+            
+            # Check if the current monster is the last monster
+            li $t3, 4
+            beq $t2, $t3, monster_continue  # If we've filled all slots, exit the loop
+            j generate_monster_stats  # Otherwise, continue generating stats for the next character
+
+        # ------------- CALCULATE MONSTER STATS -------------
+        calculate_monster_stats:
             # Randomize the stat percentage
             li $v0, 42 # Load syscall 42 (generate random number)
             syscall # Execute the syscall
@@ -110,58 +117,33 @@
             # Store the current monster's stat percentage
             la $s3, ($a0)
 
-            ##### Example: 11 / 10 = 1.1 * 12 = 13.2 (110%) #####
-            ##### Example: 3 / 10 = 0.3 * 12 = 3.6 (30%) #####
+            ##### Example: (110 * 120) = 13200 / 1000 = 13.2 (110%) #####
+            ##### Example: (33 * 120) = 3960 / 1000 = 3.96 (33%) #####
 
-            # Calculate the current monster's strength 
-            lw $s0, 0($t0) # copy the player's strength into $s0
-
-            li $s1, 0 # Initialize the counter to 0
-            calculate:
-            # Calculate the monster's strength
-
-            # - $f1: random percentage         --- 3
-            l.s $f1, ($s3) # Convert the random percentage to a float
-
-            # - $f2: 10.0
-            # - $f3: random percentage / 10.0    --- 0.3
-            l.s $f2, 10
-            div.s $f3, $f1, $f2 # Divide the random percentage by 10
-
-            # - $f4: player's stat              --- 12
-            l.s $f4, ($s0) # Convert the player's stat to a float
+            # Calculate the current monster's strength
+            li $s2, 1000 # Load the divider into $s2
             
-            # - $f5: random percentage * player's stat   --- 3.6
-            mul.s $f5, $f1, $f4 # Multiply the random percentage by the player's strength
-
-            cvt.w.s $f0, $f5 # Convert the float to an integer
-            mfc1 $a0, $f0 # Move the integer to $a0
+            # Calculate: Multiply the % by player's stat
+            mul $a3, $a3, 10
+            mul $s4, $s2, $a3    
             
-            # Store the current monster's strength
-            add $t0, $t0, 4 # Increment the characterStats array index
-            sw $a0, ($t0)
-            addi $s1, $s1, 1 # Increment the counter
-            lw $s0, 1($t0) # Copy the current monster's health into $s0
+            # Calculate: Divide % by 1000      
+            div $s4, $s2 
+            mfhi $s5
+            mflo $s6
             
-            blt $s1, 2, calculate # Check if the counter is less than 2
+            # Check if the current monster's stat remainder is less than 500 to see if it should be rounded up
+            blt $s5, 500, less_than
+                addi $s6, $s6, 1
 
-            # Check if the current monster is the last monster
-            li $t2, 4  # Total characters (including player)
-            bne $t0, $t2, generate_monster_stats # Continue generating stats for the next character
-
-            j monster_continue # Return to main program
-
-        # Calculate monster stat
-        # calculate_monster_stat:
-        #     # Load the current monster's strength into $t0
-        #     lw $t0, ($t0)
-        #     # Load the current monster's health into $t1
-        #     lw $t1, ($t1)
-
-        #     # Calculate the monster's stat
-        #     mul $t0, $t0, $t1
-
-        #     jr $ra # Return to main program
+            less_than:
+            # Store the final result
+            
+            sw $s6, ($t0)  # Store the current character's stat
+            
+            addi $t2, $t2, 1 # Increment the counter
+            
+            jr $ra # Return to main program
 
         # ------------- DISPLAY CHARACTER STATS -------------
         # Subroutine to display character stats
