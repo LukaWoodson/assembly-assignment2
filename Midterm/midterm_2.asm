@@ -37,10 +37,8 @@
         j generate_player_stats
         player_continue:
 		
-        li $t7, 0 # Initialize Loop Counter
 		j generate_monster_stats
 		monster_continue:
-        li $t7, 0 # Reset Loop Counter
 
         # display prompt message for user action
         li $v0, 4
@@ -94,25 +92,29 @@
         jr $ra # Return to main program
 
     generate_monster_stats:
-        # Generate random stat for the current monster
-        li $a1, 110 # Load monster's max stat percentage into $a1 (110%)
-        li $a2, 33  # Load monster's min stat percentage into $a2 (30%)
 
-        addi $t5, $zero, 0
-        lw $a3, characterStats($t5)  # Player's strength
+        li $t0, 0   # monster loop index
 
-        jal calculate_monster_stats  # Generate random strength stat for the current monster
+        monster_loop:
+            # Generate random stat for the current monster
+            li $a1, 110 # Load monster's max stat percentage into $a1 (110%)
+            li $a2, 33  # Load monster's min stat percentage into $a2 (30%)
 
-        addi $t5, $t5, 4    
-        lw $a3, characterStats($t5)  # Player's health     
-        jal calculate_monster_stats  # Generate random health stat for the current monster
+            addi $t5, $zero, 0
+            lw $a3, characterStats($t5)  # Player's strength
 
-        addi $t7, $t7, 1 # Increment the loop counter
-        
-        # Check if the current monster is the last monster
-        li $t3, 3
-        beq $t7, $t3, monster_continue  # If we've filled all slots, exit the loop
-        j generate_monster_stats  # Otherwise, continue generating stats for the next character
+            jal calculate_monster_stats  # Generate random strength stat for the current monster
+
+            addi $t5, $t5, 4    
+            lw $a3, characterStats($t5)  # Player's health     
+            jal calculate_monster_stats  # Generate random health stat for the current monster
+
+            addi $t0, $t0, 1 # Increment the loop counter
+            
+            # Check if the current monster is the last monster
+            li $t3, 3
+            beq $t0, $t3, monster_continue  # If we've filled all slots, exit the loop
+            j monster_loop  # Otherwise, continue generating stats for the next character
 
     calculate_monster_stats:
         # Randomize the stat percentage
