@@ -40,6 +40,9 @@
 		j generate_monster_stats
 		monster_continue:
 
+        # display character stats
+        jal display_stats
+
         # display prompt message for user action
         li $v0, 4
         la $a0, actionPrompt
@@ -50,10 +53,8 @@
         # TODO: handle user choice
         # look into syscall 8 for reading strings
 
-		# display character stats
-        jal display_stats
+		
 
-   j main
 
     debug:
     # display prompt message
@@ -157,21 +158,21 @@
     # ------------- DISPLAY CHARACTER STATS -------------
     # Subroutine to display character stats
     display_stats:
-        # LOAD CHARACTER STATS ARRAY
-        la $t2, characterStats
-        #lw $a3, ($t2) # Player's strength
-
+        
         li $t0, 0  # Initialize counter
+        li $t1, 0  # index for stats array
+        li $t2, 4  # We use 4 to loop one more time for the player's stats
+        
         character_loop:
             # print new line, 10 is ASCII code for new line
             li $a0, 10
             li $v0, 11
             syscall
             
-            beq $t7, 0, name_1
-            beq $t7, 1, name_2
-            beq $t7, 2, name_3
-            beq $t7, 3, name_4
+            beq $t0, 0, name_1
+            beq $t0, 1, name_2
+            beq $t0, 2, name_3
+            beq $t0, 3, name_4
         	name_1:
                 la $a0, player
                 j end_name_branch
@@ -184,21 +185,20 @@
             name_4:
                 la $a0, monster3
             end_name_branch:
+            
             # Display character's name
-           # move $a0, $a2
             li $v0, 4  # Print string syscall
             syscall
 
-            # Load the current character's strength
-            lw $a3, ($t2)
-
-            # display character's strength
+            ### display character's strength ###
             la $a0, characterStrengthString # Load the string
             li $v0, 4
             syscall
-            la $a0, ($a3) # Move character's strength into $a0
+
+            lw $a0, characterStats($t1) # character's strength
+            addi $t1, $t1, 4
+
             li $v0, 1
-            #move $a2, $a3 # Move character's strength into $a0
             syscall
 
             # print new line, 10 is ASCII code for new line
@@ -206,15 +206,15 @@
             li $v0, 11
             syscall
 
-            add $t2, $t2, 4 # Increment the characterStats offset by 4
-            lw $a3, ($t2)
-            #add $a3, $a3, 4 # Increment the characterStats offset by 4
-
-            # display character's health
+            ### display character's health ###
             la $a0, characterHealthString # Load the string
             li $v0, 4
             syscall
-            la $a0, ($a3) # Move character's health into $a0
+            
+
+            lw $a0, characterStats($t1) # player's health
+            addi $t1, $t1, 4
+
             li $v0, 1
             syscall
 
@@ -223,16 +223,12 @@
             li $v0, 11
             syscall
 
-            # Increment $t1 to point to the next character name and $a3 to point to the next character's strength
-            add $t1, $t1, 4
-            add $a3, $a3, 4
 
             # Increment the counter
-            addi $t7, $t7, 1
+            addi $t0, $t0, 1
         	
             # Check if we've displayed stats for all characters (4 in total)
-            li $t4, 4  # We use 4 to loop one more time for the player's stats
-            blt $t7, $t4, character_loop # If we haven't displayed all characters, continue with the next character
+            blt $t0, $t2, character_loop # If we haven't displayed all characters, continue with the next character
 
         jr $ra  # Return from the subroutine
 
