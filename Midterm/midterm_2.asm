@@ -1,4 +1,6 @@
 .data
+    welcomeMessage: .asciiz "\nWelcome to the Monster Text Battle Game!\n\n"
+
     ###### ------------- CHARACTER ARRAY INFO ------------- ######
     # Define an array to store character stats: 8 elements (4 characters)
     characterStats: .space 32
@@ -14,8 +16,8 @@
     ###### ------------- ACTION PROMPT INFO ------------- ######
     # Define a buffer to store player's action
     playerAction: .space 2  # Reserve 8 bytes for player's input
-
     # Define the action prompt message
+    actionPrompt1: .asciiz "\nBe careful! You are about to enter a battle round!"
     actionPrompt2: .asciiz "\nChoose your action (1) for Attack or (2) for Heal: "
     healingString: .asciiz "\nHealing..."
     attackingString1: .asciiz "\nAttacking... \nMonster "
@@ -41,6 +43,11 @@
 		j generate_monster_stats
 		monster_continue:
 
+        # display welcome message
+        li $v0, 4
+        la $a0, welcomeMessage
+        syscall
+
         # display character stats
         jal display_stats
 
@@ -48,6 +55,8 @@
             prompt:
                 # display prompt message for user action
                 li $v0, 4
+                la $a0, actionPrompt1
+                syscall
                 la $a0, actionPrompt2
                 syscall
                 # get user choice

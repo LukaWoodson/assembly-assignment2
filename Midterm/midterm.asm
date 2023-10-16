@@ -1,4 +1,6 @@
 .data
+    welcomeMessage: .asciiz "\nWelcome to the Monster Text Battle Game!\n\n"
+
     ###### ------------- CHARACTER ARRAY INFO ------------- ######
     # Define an array to store character stats: 8 elements (4 characters)
     characterStats: .space 32
@@ -8,18 +10,21 @@
     monster3: .asciiz "\nMonster 3\n"
     characterHealthString: .asciiz "Health:  "
     characterStrengthString: .asciiz "Strength:  "
-    characterStatsLength: .word 8
-    slotSize: .word 4
+    maxHealth: .word 0
 
     ###### ------------- ACTION PROMPT INFO ------------- ######
     # Define a buffer to store player's action
     playerAction: .space 2  # Reserve 8 bytes for player's input
     # Define the action prompt message
+    actionPrompt1: .asciiz "\nBe careful! You are about to enter a battle round!"
     actionPrompt2: .asciiz "\nChoose your action (1) for Attack or (2) for Heal: "
-    healingString: .asciiz "\nHealing..."
     attackingString1: .asciiz "\nAttacking... \nMonster "
     attackingString2: .asciiz " has taken damage!\n"
     attackingString3: .asciiz " points of health lost!\n"
+    healingString1: .asciiz "\nHealing...\nYou have gained "
+    healingString2: .asciiz " points of health!\n"
+    noHealingString: .asciiz "\nYou are already at max health!\n"
+    monsterAttackString: .asciiz "\nMonster is attacking..."
 
 
 .text
@@ -28,10 +33,8 @@
     main:
 
         addi $s0, $zero, 0
-        la $s1, characterStatsLength
-        lw $s1, ($s1)
-        la $s2, slotSize 
-        lw $s2, ($s2)
+        la $s1, maxHealth
+        sw $s1, ($s1)
 
         # load player data
         j generate_player_stats
@@ -40,6 +43,11 @@
 		j generate_monster_stats
 		monster_continue:
 
+        # display welcome message
+        li $v0, 4
+        la $a0, welcomeMessage
+        syscall
+
         # display character stats
         jal display_stats
 
@@ -47,6 +55,8 @@
             prompt:
                 # display prompt message for user action
                 li $v0, 4
+                la $a0, actionPrompt1
+                syscall
                 la $a0, actionPrompt2
                 syscall
                 # get user choice
@@ -78,36 +88,35 @@
 
         # Load the player's attack stat and the first monster's health
         lw $t4, characterStats($t2)  # player's strength
-        lw $t6, characterStats($t3)  # monster1's health
+        lw $t5, characterStats($t3)  # monster1's health
 
         # Check if the first monster is alive (health > 0)
-        bnez $t6, attack_monster  # Branch to attack_monster if health is not zero
+        bnez $t5, attack_monster  # Branch to attack_monster if health is not zero
 
         # If monster1 is already dead, then try monster2
         addi $t3, $t3, 8  # Increment index by 8 to get to monster2's health
-        lw $t6, characterStats($t3)  # Load monster2's health
+        lw $t5, characterStats($t3)  # Load monster2's health
 
         # Check if monster2 is alive (health > 0)
-        bnez $t6, attack_monster  # Branch to attack_monster if health is not zero
+        bnez $t5, attack_monster  # Branch to attack_monster if health is not zero
 
         # If both monster1 and monster2 are dead, try monster3
-        lw $t6, characterStats($t3)  # Load monster3's health
+        lw $t5, characterStats($t3)  # Load monster3's health
 
         attack_monster:
             # Subtract the player's strength from the monster's health
-            sub $t6, $t6, $t4
+            sub $t5, $t5, $t4
 
             # Store the updated monster's health back in the array
-            sw $t6, characterStats($t3)
+            sw $t5, characterStats($t3)
 
         # Display the attacking message 1
         li $v0, 4
         la $a0, attackingString1
         syscall
 
-        # Display the monster's index + 1
-        addi $t3, $t3, 4
-        divi $t3, $t3, 4
+        # Display the monster's index
+        div $t3, $t3, 4
         li $v0, 1
         la $a0, ($t3)
         syscall
@@ -127,13 +136,64 @@
         j check_game_over
 
     heal:
+        # Load the index of the player in the array
+        addi $t2, $zero, 0 # player index
+        # Load the player's strength
+        lw $t3, characterStats($t2)  # player's strength
+        addi $t2, $t2, 4 # Increment index by 4 to get to player's health
+        # Load the player's health
+        lw $t4, characterStats($t2)  # player's health
+
+        # Add the player's strength to the player's health
+        add $t5, $t4, $t3
+
+		# la $t6, maxHealth
+        lw $t6, ($s1)
+        # Check if the player's health is greater than the max health
+        bgt $t5, $t6, make_max_health  # Branch to make_max_health if health is greater than max health 
+        beq $t5, $t6, no_heal_message  # Branch to no_heal_message if health is equal to max health
+
+        health_calculated:
+        # Store the updated player's health back in the array
+        sw $t5, characterStats($t2)
+
+        sub $t3, $t5, $t4 # Calculate the amount of health points gained
+        
+        # Display the healing message 1
         li $v0, 4
-        la $a0, healingString
+        la $a0, healingString1
+        syscall
+
+        # Display the amount of health points gained
+        li $v0, 1
+        la $a0, ($t3)
+        syscall
+        # Display the healing message 2
+        li $v0, 4
+        la $a0, healingString2
+        syscall
+
+        j check_game_over
+        
+        make_max_health:
+            la $t5, ($t6)
+            j health_calculated
+
+        no_heal_message:
+            li $v0, 4
+            la $a0, noHealingString
+            syscall
+            j check_game_over
+
+    monsterAttac:
+        li $v0, 4
+        la $a0, monsterAttackString
         syscall
         j check_game_over
 
     ############################## SUBROUTINES ##############################
     generate_player_stats:
+            li $t0, 0   # player loop index
             li $a1, 12  # Load player's max strength into $a1
             li $a2, 5   # Load player's min strength into $a2
             jal generate_random_value  # Generate random strength
@@ -146,6 +206,7 @@
 
         # ------------- GENERATE RANDOM VALUE -------------
     generate_random_value:
+        # Randomize the stat percentage
         li $v0, 42 # Load syscall 42 (generate random number)
         syscall # Execute the syscall
         add $a0, $a0, $a2 # Adjust range to be within original range
@@ -156,9 +217,19 @@
         bgt $a0, $a1, generate_random_value
 
         sw $a0, characterStats($s0)
-        addi $s0, $s0, 4 #----------------------------------------------------------------------------------------------------------------------------------------------------------
+        addi $t0, $t0, 1 # Increment the loop counter
+
+        bgt $t0, 1, set_max_health
+        increment_array:
+        addi $s0, $s0, 4 
                     
         jr $ra # Return to main program
+
+        set_max_health:
+            addi $t0, $zero, 4
+            lw $t1, characterStats($t0)
+            sw $t1, ($s1) 
+            j increment_array
 
     generate_monster_stats:
 
@@ -299,8 +370,4 @@
 
         jr $ra  # Return from the subroutine
         
-    
-    
-    
-    
-    
+ 
