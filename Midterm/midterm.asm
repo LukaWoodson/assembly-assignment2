@@ -25,6 +25,8 @@
     healingString2: .asciiz " points of health!\n"
     noHealingString: .asciiz "\nYou are already at max health!\n"
     monsterAttackString: .asciiz "\nMonster is attacking..."
+    monsterAttackString2: .asciiz "You managed to evade damage!\n"
+    gameOverMessage: .asciiz "\n\n\nGame Over!\n\n\n"
 
 
 .text
@@ -35,6 +37,7 @@
         addi $s0, $zero, 0
         la $s1, maxHealth
         sw $s1, ($s1)
+        li $s2, 3
 
         # load player data
         j generate_player_stats
@@ -70,10 +73,40 @@
 
                 j prompt
             check_game_over:
+
+                li $t0, 4 # index for player's health
+                lw $t1, characterStats($t0) # load player's health
+                ble	$t1, $zero, game_over	# if player's health is 0 or less end the game
+
+                li $t0, 12 # index for first monster's health
+                li $t1, 0 # number of dead monsters
+                li $t2, 3 # number of monsters
+                li $t5, 0 # loop counter
+                
+                check_game_over_loop:
+                    # end game if all monsters are dead
+                    bge	$t1, $t2, game_over	
+                    # continue game once all monsters' health is checked
+                    # div $t4, $t0, 4
+                    # sub $t4, $t4, 3
+                    bge	$t5, $t2, continue_game	
+                    
+                    # get moster's health
+                    lw $t3, characterStats($t0)
+                    # increment to next health
+                    addi $t0, $t0, 8
+                    # increment loop
+                    addi $t5, $t5, 1
+                    # if monster's health is above 0 then don't increment death count
+                    bgt $t3, $zero, check_game_over_loop
+                    addi $t1, $t1, 1
+                    
+                    j check_game_over_loop
+                
+            continue_game:
+
             # display character stats
             jal display_stats
-
-            # TODO: check if player is dead or if all monsters are dead
 
             j game_loop
 
@@ -84,56 +117,53 @@
     playerAttack:
         # Load the indexes of the player and monster1 in the array
         addi $t2, $zero, 0 # player index
-        addi $t3, $t2, 12  # monster1 index
+        addi $t3, $t2, 4  # monster1 index - 8 for looping
+        li $t7, 0
 
-        # Load the player's attack stat and the first monster's health
-        lw $t4, characterStats($t2)  # player's strength
-        lw $t5, characterStats($t3)  # monster1's health
+        playerAttackLoop:
+            # Load the player's attack stat and the monster's health
+            addi $t3, $t3, 8
+            lw $t4, characterStats($t2)  # player's strength
+            lw $t5, characterStats($t3)  # monster1's health
 
-        # Check if the first monster is alive (health > 0)
-        bnez $t5, attack_monster  # Branch to attack_monster if health is not zero
+            addi $t7, $t7, 1
+            bgt $t7, $s2, monsterAttack
+            
+            # Check if the monster is alive (health > 0)
+            blez $t5, playerAttackLoop  # If monster's health is 0 or less, then skip to the next monster
 
-        # If monster1 is already dead, then try monster2
-        addi $t3, $t3, 8  # Increment index by 8 to get to monster2's health
-        lw $t5, characterStats($t3)  # Load monster2's health
-
-        # Check if monster2 is alive (health > 0)
-        bnez $t5, attack_monster  # Branch to attack_monster if health is not zero
-
-        # If both monster1 and monster2 are dead, try monster3
-        lw $t5, characterStats($t3)  # Load monster3's health
-
-        attack_monster:
             # Subtract the player's strength from the monster's health
             sub $t5, $t5, $t4
 
             # Store the updated monster's health back in the array
             sw $t5, characterStats($t3)
 
-        # Display the attacking message 1
-        li $v0, 4
-        la $a0, attackingString1
-        syscall
+            # Display the attacking message 1
+            li $v0, 4
+            la $a0, attackingString1
+            syscall
 
-        # Display the monster's index
-        div $t3, $t3, 4
-        li $v0, 1
-        la $a0, ($t3)
-        syscall
-        # Display the attacking message 2
-        li $v0, 4
-        la $a0, attackingString2
-        syscall
-        # Display number of health points lost
-        li $v0, 1
-        la $a0, ($t4)
-        syscall
-        # Display the attacking message 3
-        li $v0, 4
-        la $a0, attackingString3
-        syscall
+            # Display the monster's index
+            div $t6, $t3, 4
+            sub $t6, $t6, 3
+            li $v0, 1
+            la $a0, ($t6)
+            syscall
+            # Display the attacking message 2
+            li $v0, 4
+            la $a0, attackingString2
+            syscall
+            # Display number of health points lost
+            li $v0, 1
+            la $a0, ($t4)
+            syscall
+            # Display the attacking message 3
+            li $v0, 4
+            la $a0, attackingString3
+            syscall
 
-        j check_game_over
+            j monsterAttack
+
 
     heal:
         # Load the index of the player in the array
@@ -173,7 +203,7 @@
         la $a0, healingString2
         syscall
 
-        j check_game_over
+        j monsterAttack
         
         make_max_health:
             la $t5, ($t6)
@@ -183,14 +213,69 @@
             li $v0, 4
             la $a0, noHealingString
             syscall
-            j check_game_over
+            j monsterAttack
 
-    monsterAttac:
+    monsterAttack:
+        addi $t7, $zero, 0 # monster index
+
         li $v0, 4
         la $a0, monsterAttackString
         syscall
-        j check_game_over
 
+        addi $t2, $zero, 8 # monster stength index
+        addi $t3, $zero, 4 # player health index
+        
+        attack_player:    
+
+            # exit loop if all monster had the chance to attack
+            li $a3, 3
+            bge $t7, $a3, check_game_over
+            
+            lw $t4, characterStats($t3)  # player's health
+            lw $t5, characterStats($t2)  # monster's strength
+            addi $t2, $t2, 4 # Increment index by 4 to get to monster's health
+            lw $t6, characterStats($t2)  # monster's health
+
+            addi $t2, $t2, 4 # Increment index by 4 to get to monster's health
+            addi $t7, $t7, 1
+
+            ble $t6, $zero, attack_player # If monster's health is 0 or less, then skip to the next monster
+
+            li $a1, 1
+            # Randomize the stat percentage
+            li $v0, 42 # Load syscall 42 (generate random number)
+            syscall 
+            # if should attach, then keep going
+            bne $a0, $a1, attack_player
+            
+            # Subtract the monster's strength from the player's health
+            sub $t4, $t4, $t5
+
+            # Store the updated player's health back in the array
+            sw $t4, characterStats($t3)
+
+            # Display the attacking message 1
+            li $v0, 1
+            la $a0, ($t4)
+            syscall
+
+            # Display the damage message 2
+            li $v0, 4
+            la $a0, attackingString3
+            syscall
+
+            j attack_player
+
+    game_over:
+        # Display the game over message
+        li $v0, 4
+        la $a0, gameOverMessage
+        syscall
+
+        # Exit the program
+        li $v0, 10
+        syscall
+    
     ############################## SUBROUTINES ##############################
     generate_player_stats:
             li $t0, 0   # player loop index
@@ -299,13 +384,15 @@
         
         li $t0, 0  # Initialize counter
         li $t1, 0  # index for stats array
-        li $t2, 4  # We use 4 to loop one more time for the player's stats
+        li $t2, 4 # We use 4 to loop one more time for the player's stats
         
         character_loop:
             # print new line, 10 is ASCII code for new line
             li $a0, 10
             li $v0, 11
             syscall
+
+            
             
             beq $t0, 0, name_1
             beq $t0, 1, name_2

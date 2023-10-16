@@ -14,11 +14,8 @@
 ---------------------- Step 2: Implementing Actions ---------------------- 
 
 2.1. Implement the player's attack action.
-
 2.2. Handle player's healing action.
-
 2.3. Implement random monster attacks.
-
 2.4. Update character stats after each action.
 
 
@@ -26,9 +23,7 @@
 ---------------------- Step 3: Win/Lose Conditions ---------------------- 
 
 3.1. Check for the player's health falling to zero.
-
 3.2. Check for all monsters being defeated.
-
 3.3. End the game if a win or lose condition is met.
 
 
