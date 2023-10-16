@@ -3,22 +3,23 @@
     # Define an array to store character stats: 8 elements (4 characters)
     characterStats: .space 32
     player: .asciiz "\nPlayer\n"
-    monster1: .asciiz "\nMonster1\n"
-    monster2:.asciiz "\nMonster2\n"
-    monster3: .asciiz "\nMonster3\n"
+    monster1: .asciiz "\nMonster 1\n"
+    monster2:.asciiz "\nMonster 2\n"
+    monster3: .asciiz "\nMonster 3\n"
     characterHealthString: .asciiz "Health:  "
     characterStrengthString: .asciiz "Strength:  "
     characterStatsLength: .word 8
     slotSize: .word 4
-    healingString: .asciiz "Healing..."
-    attackingString: .asciiz "Attacking..."
 
+    ###### ------------- ACTION PROMPT INFO ------------- ######
     # Define a buffer to store player's action
     playerAction: .space 2  # Reserve 8 bytes for player's input
-
-    ###### ------------- ACTION MESSAGES ------------- ######
     # Define the action prompt message
-    actionPrompt: .asciiz "\nChoose your action (1) for Attack or (2) for Heal: "
+    actionPrompt2: .asciiz "\nChoose your action (1) for Attack or (2) for Heal: "
+    healingString: .asciiz "\nHealing..."
+    attackingString1: .asciiz "\nAttacking... \nMonster "
+    attackingString2: .asciiz " has taken damage!\n"
+    attackingString3: .asciiz " points of health lost!\n"
 
 
 .text
@@ -42,38 +43,38 @@
         # display character stats
         jal display_stats
 
-    game_loop:
-        prompt:
-            # display prompt message for user action
-            li $v0, 4
-            la $a0, actionPrompt
-            syscall
-            # get user choice
-            li $v0, 5
-            syscall
-        
-            li $t0, 1
-            li $t1, 2
-            beq	$v0, $t0, playerAttack
-            beq $v0, $t1, heal
+        game_loop:
+            prompt:
+                # display prompt message for user action
+                li $v0, 4
+                la $a0, actionPrompt2
+                syscall
+                # get user choice
+                li $v0, 5
+                syscall
+            
+                li $t0, 1
+                li $t1, 2
+                beq	$v0, $t0, playerAttack
+                beq $v0, $t1, heal
 
-            j prompt
-        check_game_over:
-        # display character stats
-        jal display_stats
+                j prompt
+            check_game_over:
+            # display character stats
+            jal display_stats
 
-        # TODO: check if player is dead or if all monsters are dead
+            # TODO: check if player is dead or if all monsters are dead
 
-        j game_loop
+            j game_loop
 
-    # Exit the program
-    li $v0, 10
-    syscall		
+        # Exit the program
+        li $v0, 10
+        syscall		
 
     playerAttack:
         # Load the indexes of the player and monster1 in the array
-        addi $t2, $zero, 0
-        addi $t3, $t2, 12  
+        addi $t2, $zero, 0 # player index
+        addi $t3, $t2, 12  # monster1 index
 
         # Load the player's attack stat and the first monster's health
         lw $t4, characterStats($t2)  # player's strength
@@ -99,13 +100,28 @@
             # Store the updated monster's health back in the array
             sw $t6, characterStats($t3)
 
-        # Display the attacking message
+        # Display the attacking message 1
         li $v0, 4
-        la $a0, attackingString
+        la $a0, attackingString1
         syscall
 
+        # Display the monster's index + 1
+        addi $t3, $t3, 4
+        divi $t3, $t3, 4
+        li $v0, 1
+        la $a0, ($t3)
+        syscall
+        # Display the attacking message 2
         li $v0, 4
-        la $a0, monster1
+        la $a0, attackingString2
+        syscall
+        # Display number of health points lost
+        li $v0, 1
+        la $a0, ($t4)
+        syscall
+        # Display the attacking message 3
+        li $v0, 4
+        la $a0, attackingString3
         syscall
 
         j check_game_over
