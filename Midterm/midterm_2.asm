@@ -18,7 +18,7 @@
 
     ###### ------------- ACTION MESSAGES ------------- ######
     # Define the action prompt message
-    actionPrompt: .asciiz "\nChoose your action (1) for Attack or (2) for Heal: "
+    actionPrompt: .asciiz "\nChoose your action (attack/heal): "
 
 
 .text
